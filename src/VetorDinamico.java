@@ -76,10 +76,12 @@ public class VetorDinamico {
 
   boolean estaVazio(){
 
+    return qtde == 0;
+
   }
 
   boolean estaUmQuartoCheio(){
-    
+    return qtde >= cap / 4;
   }
 
   void reduzirTamanho(){
