@@ -1,7 +1,11 @@
 {
-    "java.project.sourcePaths": ["src"],
+    "java.project.sourcePaths": [
+        "src"
+    ],
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
-        "lib/**/*.jar"
+        "lib/**/*.jar",
+        "c:\\Users\\admin\\Downloads\\lombok.jar",
+        "c:\\Users\\admin\\Downloads\\postgresql-42.7.3.jar"
     ]
 }
