@@ -20,14 +20,14 @@ public class ControleLogin {
         }
     }
 
-    public static void main(String[] args) {
+    public static boolean showLoginDialog() {
         String usuario;
         String senha;
         do {
             usuario = JOptionPane.showInputDialog("Digite o usuário: ");
             if (usuario == null) {
                 JOptionPane.showMessageDialog(null, "Login cancelado!");
-                return;
+                return false;
             } else if (usuario.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Usuário não pode estar vazio. Digite novamente");
             }
@@ -37,7 +37,7 @@ public class ControleLogin {
             senha = JOptionPane.showInputDialog("Digite a senha: ");
             if (senha == null) {
                 JOptionPane.showMessageDialog(null, "Login cancelado!");
-                return;
+                return false;
             } else if (senha.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Senha não pode estar vazia. Digite novamente.");
             }
@@ -45,9 +45,10 @@ public class ControleLogin {
 
         if (login(usuario, senha)) {
             JOptionPane.showMessageDialog(null, "Login realizado com sucesso!");
-            App.main(new String[0]);
+            return true;
         } else {
             JOptionPane.showMessageDialog(null, "Usuário ou senha inválidos. Tente novamente.");
+            return false;
         }
     }
 }
