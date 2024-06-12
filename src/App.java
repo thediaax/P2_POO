@@ -1,6 +1,7 @@
 import java.util.Random;
 import javax.swing.JOptionPane;
 import java.util.List;
+import java.sql.Connection;
 
 public class App {
     public static void main(String[] args) {
@@ -8,84 +9,97 @@ public class App {
             return;
         }
 
-        while (true) {
-            String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
-            String escolha = JOptionPane.showInputDialog(menu);
+        // Obtém o ID do usuário logado
+        int usuarioId = ControleLogin.getUsuarioIdLogado();
 
-            if (escolha == null) {
-                JOptionPane.showMessageDialog(null, "Operação cancelada.");
-                continue;
+        // Verifica se o ID do usuário é válido
+        if (usuarioId == -1) {
+            JOptionPane.showMessageDialog(null, "Erro ao obter ID do usuário logado.");
+            return;
+        }
+
+        // Conexão com o banco de dados
+        try (Connection connection = ConnectionFactory.getConnection()) {
+            if (connection == null) {
+                JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                return;
             }
 
-            switch (escolha) {
-                case "1":
-                    var p = new Personagem();
-                    Random gerador = new Random();
-                    p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
-                    LogAtividade logger = new LogAtividade();
+            while (true) {
+                String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
+                String escolha = JOptionPane.showInputDialog(menu);
 
-                    if (logger.getConnection() == null) {
-                        JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
-                        continue;
-                    }
+                if (escolha == null) {
+                    JOptionPane.showMessageDialog(null, "Operação cancelada.");
+                    continue;
+                }
 
-                    StringBuilder output = new StringBuilder();
-                    output.append(p.toString()).append("\n\n");
+                LogAtividade logger = new LogAtividade(connection);
 
-                    for (int i = 0; i < 10; i++) {
-                        if (p.energia > 0) {
-                            int oQueFazer = gerador.nextInt(3);
-                            switch (oQueFazer) {
-                                case 0:
-                                    p.cacar();
-                                    logger.logActivity("caçar");
-                                    output.append(p.nome).append(" está caçando...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
-                                case 1:
-                                    p.comer();
-                                    logger.logActivity("comer");
-                                    output.append(p.nome).append(" está comendo...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
-                                case 2:
-                                    p.dormir();
-                                    logger.logActivity("dormir");
-                                    output.append(p.nome).append(" está dormindo...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
+                switch (escolha) {
+                    case "1":
+                        var p = new Personagem();
+                        Random gerador = new Random();
+                        p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
+
+                        if (logger.getConnection() == null) {
+                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                            continue;
+                        }
+
+                        StringBuilder output = new StringBuilder();
+                        output.append(p.toString()).append("\n\n");
+
+                        for (int i = 0; i < 10; i++) {
+                            if (p.energia > 0) {
+                                int oQueFazer = gerador.nextInt(3);
+                                switch (oQueFazer) {
+                                    case 0:
+                                        p.cacar();
+                                        logger.logActivity("caçar", usuarioId);
+                                        output.append(p.nome).append(" caçou\n");
+                                        break;
+                                    case 1:
+                                        p.comer();
+                                        logger.logActivity("comer", usuarioId);
+                                        output.append(p.nome).append(" comeu\n");
+                                        break;
+                                    case 2:
+                                        p.dormir();
+                                        logger.logActivity("dormir", usuarioId);
+                                        output.append(p.nome).append(" dormiu\n");
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    JOptionPane.showMessageDialog(null, output.toString());
-                    logger.close();
-                    break;
+                        JOptionPane.showMessageDialog(null, output.toString());
+                        break;
 
-                case "2":
-                    logger = new LogAtividade();
+                    case "2":
+                        if (logger.getConnection() == null) {
+                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                            continue;
+                        }
 
-                    if (logger.getConnection() == null) {
-                        JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
-                        continue;
-                    }
+                        List<String> logs = logger.getLogs();
+                        StringBuilder logOutput = new StringBuilder("Log de Atividades:\n\n");
+                        for (String log : logs) {
+                            logOutput.append(log).append("\n");
+                        }
+                        JOptionPane.showMessageDialog(null, logOutput.toString());
+                        break;
 
-                    List<String> logs = logger.getLogs();
-                    StringBuilder logOutput = new StringBuilder("Log de Atividades:\n\n");
-                    for (String log : logs) {
-                        logOutput.append(log).append("\n");
-                    }
-                    JOptionPane.showMessageDialog(null, logOutput.toString());
-                    logger.close();
-                    break;
+                    case "3":
+                        return;
 
-                case "3":
-                    return;
-
-                default:
-                    JOptionPane.showMessageDialog(null, "Opção inválida. Tente novamente.");
-                    break;
+                    default:
+                        JOptionPane.showMessageDialog(null, "Opção inválida. Tente novamente.");
+                        break;
+                }
             }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage());
         }
     }
 }

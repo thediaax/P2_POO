@@ -5,20 +5,33 @@ import java.sql.ResultSet;
 import javax.swing.JOptionPane;
 
 public class ControleLogin {
+    private static int usuarioIdLogado = -1;
+
     public static boolean login(String usuario, String senha) {
-        String query = "SELECT * FROM usuarios WHERE usuario = ? AND senha = ?";
+        String query = "SELECT id FROM usuarios WHERE usuario = ? AND senha = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.setString(1, usuario);
             pstmt.setString(2, senha);
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                if (rs.next()) {
+                    usuarioIdLogado = rs.getInt("id");
+                    return true;
+                } else {
+                    JOptionPane.showMessageDialog(null, "Usuário ou senha incorretos.");
+                    return false;
+                }
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Erro ao realizar login: " + e.getMessage());
             return false;
         }
     }
+    public static int getUsuarioIdLogado() {
+        return usuarioIdLogado;
+    }
+
+
 
     public static boolean showLoginDialog() {
         String usuario;
@@ -51,4 +64,5 @@ public class ControleLogin {
             return false;
         }
     }
+    
 }
