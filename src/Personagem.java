@@ -42,6 +42,7 @@ public class Personagem {
             output.append(nome).append(" está caçando...\n");
             energia -= 2;
             logAtividade.registrarCaca(usuarioId, sessaoId);
+            logAtividade.logActivity(nome + " caçou e ganhou 2 pontos", usuarioId);
             cacadas++;
             System.out.println("Pontuação acrescida por caçar: +2 pontos");
             output.append("Pontuação acrescida por caçar: +2 pontos\n");
@@ -64,6 +65,7 @@ public class Personagem {
                 output.append(nome).append(" comendo...\n");
                 --fome;
                 energia = (energia == 10 ? energia : energia + 1);
+                logAtividade.logActivity(nome + " comeu e recuperou energia", usuarioId);
         }
     }
 
@@ -74,6 +76,7 @@ public class Personagem {
             sono -= 1;
             energia = Math.min(energia + 1, 10);
             logAtividade.registrarSono(usuarioId, sessaoId);
+            logAtividade.logActivity(nome + " dormiu e perdeu 1 ponto", usuarioId);
             sonos++;
             System.out.println("Pontuação decrescida por dormir: -1 ponto");
             output.append("Pontuação decrescida por dormir: -1 ponto\n");
@@ -121,9 +124,10 @@ public class Personagem {
         JOptionPane.showMessageDialog(null, output.toString());
         int pontuacaoFinal = logAtividade.calcularPontuacaoFinal(usuarioId, sessaoId);
         System.out.println("Pontuação final: " + pontuacaoFinal);
+        logAtividade.logActivity(nome + " finalizou o jogo com pontuação final: " + pontuacaoFinal, usuarioId);
     }
 
     public String getStatus() {
-        return String.format("Nome: %s\nVida: %d\nCaçadas: %d\nDormidas: %d\n", nome, energia, cacadas, sonos);
+        return String.format("Nome: %s\nEnergia: %d\nCaçadas: %d\nDormidas: %d\n", nome, energia, cacadas, sonos);
     }
 }
