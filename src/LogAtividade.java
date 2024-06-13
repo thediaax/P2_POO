@@ -26,6 +26,61 @@ public class LogAtividade {
         }
     }
 
+    public void registrarCaca(int usuarioId, int sessaoId) {
+        String sql = "UPDATE pontuacoes SET cacadas = cacadas + 1, pontos = pontos + 2 WHERE usuario_id = ? AND sessao_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, usuarioId);
+            pstmt.setInt(2, sessaoId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void registrarSono(int usuarioId, int sessaoId) {
+        String sql = "UPDATE pontuacoes SET sonos = sonos + 1, pontos = pontos - 1 WHERE usuario_id = ? AND sessao_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, usuarioId);
+            pstmt.setInt(2, sessaoId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int calcularPontuacaoFinal(int usuarioId, int sessaoId) {
+        String sql = "SELECT cacadas, sonos FROM pontuacoes WHERE usuario_id = ? AND sessao_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, usuarioId);
+            pstmt.setInt(2, sessaoId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int cacadas = rs.getInt("cacadas");
+                    int sonos = rs.getInt("sonos");
+                    int pontos = 2 * cacadas - sonos; // Calcula a pontuação final
+                    atualizarPontuacao(usuarioId, sessaoId, pontos);
+                    System.out.println("Pontuação final: " + pontos);
+                    return pontos;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0; // Retorna 0 se houver um erro
+    }
+
+    private void atualizarPontuacao(int usuarioId, int sessaoId, int pontos) {
+        String sql = "UPDATE pontuacoes SET pontos = ? WHERE usuario_id = ? AND sessao_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, pontos);
+            pstmt.setInt(2, usuarioId);
+            pstmt.setInt(3, sessaoId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<String> getLogs() {
         List<String> logs = new ArrayList<>();
         String sql = "SELECT descricao, data_de_ocorrencia FROM tb_atividade ORDER BY data_de_ocorrencia DESC";

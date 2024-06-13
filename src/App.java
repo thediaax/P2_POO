@@ -2,6 +2,9 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 import java.util.List;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class App {
     public static void main(String[] args) {
@@ -25,6 +28,8 @@ public class App {
                 return;
             }
 
+            LogAtividade logger = new LogAtividade(connection);
+
             while (true) {
                 String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
                 String escolha = JOptionPane.showInputDialog(menu);
@@ -34,18 +39,20 @@ public class App {
                     continue;
                 }
 
-                LogAtividade logger = new LogAtividade(connection);
-
                 switch (escolha) {
                     case "1":
-                        var p = new Personagem();
-                        Random gerador = new Random();
-                        p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
+                        // Iniciar uma nova sessão
+                        int sessaoId = iniciarNovaSessao(usuarioId, connection);
 
-                        if (logger.getConnection() == null) {
-                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                        // Verifica se a sessão foi criada com sucesso
+                        if (sessaoId == -1) {
+                            JOptionPane.showMessageDialog(null, "Erro ao iniciar nova sessão.");
                             continue;
                         }
+
+                        var p = new Personagem(10, 0, 0, usuarioId, sessaoId, logger);
+                        Random gerador = new Random();
+                        p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
 
                         StringBuilder output = new StringBuilder();
                         output.append(p.toString()).append("\n\n");
@@ -55,33 +62,26 @@ public class App {
                                 int oQueFazer = gerador.nextInt(3);
                                 switch (oQueFazer) {
                                     case 0:
-                                        p.cacar();
-                                        logger.logActivity("caçar", usuarioId);
-                                        output.append(p.nome).append(" caçou\n");
+                                        p.cacar(output);
                                         break;
                                     case 1:
-                                        p.comer();
-                                        logger.logActivity("comer", usuarioId);
-                                        output.append(p.nome).append(" comeu\n");
+                                        p.comer(output);
                                         break;
                                     case 2:
-                                        p.dormir();
-                                        logger.logActivity("dormir", usuarioId);
-                                        output.append(p.nome).append(" dormiu\n");
+                                        p.dormir(output);
                                         break;
                                 }
                             }
                         }
 
+                        // Calcular e registrar a pontuação final
+                        int pontuacaoFinal = logger.calcularPontuacaoFinal(usuarioId, sessaoId);
+                        output.append("\nPontuação final: ").append(pontuacaoFinal).append("\n");
+
                         JOptionPane.showMessageDialog(null, output.toString());
                         break;
 
                     case "2":
-                        if (logger.getConnection() == null) {
-                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
-                            continue;
-                        }
-
                         List<String> logs = logger.getLogs();
                         StringBuilder logOutput = new StringBuilder("Log de Atividades:\n\n");
                         for (String log : logs) {
@@ -101,5 +101,27 @@ public class App {
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage());
         }
+    }
+
+    private static int iniciarNovaSessao(int usuarioId, Connection connection) {
+        String sql = "INSERT INTO pontuacoes (usuario_id, sessao_id) VALUES (?, ?) RETURNING sessao_id";
+        int sessaoId = gerarSessaoId();
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, usuarioId);
+            pstmt.setInt(2, sessaoId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("sessao_id");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    private static int gerarSessaoId() {
+        // Gerar um ID de sessão aleatório ou baseado em lógica específica
+        return new Random().nextInt(1000000);
     }
 }
