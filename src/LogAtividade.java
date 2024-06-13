@@ -26,6 +26,19 @@ public class LogAtividade {
         }
     }
 
+    public void registrarAtividade(int usuarioId, int sessaoId, String descricao) {
+        String sql = "INSERT INTO atividades (usuario_id, sessao_id, descricao, data_hora) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, usuarioId);
+            pstmt.setInt(2, sessaoId);
+            pstmt.setString(3, descricao);
+            pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void registrarCaca(int usuarioId, int sessaoId) {
         String sql = "UPDATE pontuacoes SET cacadas = cacadas + 1, pontos = pontos + 2 WHERE usuario_id = ? AND sessao_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -57,16 +70,15 @@ public class LogAtividade {
                 if (rs.next()) {
                     int cacadas = rs.getInt("cacadas");
                     int sonos = rs.getInt("sonos");
-                    int pontos = 2 * cacadas - sonos; // Calcula a pontuação final
+                    int pontos = 2 * cacadas - sonos;
                     atualizarPontuacao(usuarioId, sessaoId, pontos);
-                    System.out.println("Pontuação final: " + pontos);
                     return pontos;
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 0; // Retorna 0 se houver um erro
+        return 0;
     }
 
     private void atualizarPontuacao(int usuarioId, int sessaoId, int pontos) {

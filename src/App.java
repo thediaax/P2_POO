@@ -11,17 +11,14 @@ public class App {
         if (!ControleLogin.showLoginDialog()) {
             return;
         }
-
-        // Obtém o ID do usuário logado
+        
         int usuarioId = ControleLogin.getUsuarioIdLogado();
 
-        // Verifica se o ID do usuário é válido
         if (usuarioId == -1) {
             JOptionPane.showMessageDialog(null, "Erro ao obter ID do usuário logado.");
             return;
         }
 
-        // Conexão com o banco de dados
         try (Connection connection = ConnectionFactory.getConnection()) {
             if (connection == null) {
                 JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
@@ -31,20 +28,19 @@ public class App {
             LogAtividade logger = new LogAtividade(connection);
 
             while (true) {
-                String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
+                String menu = "1- Jogar\n2- Consultar log completo\n3- Ver ranking\n4- Sair";
                 String escolha = JOptionPane.showInputDialog(menu);
 
                 if (escolha == null) {
                     JOptionPane.showMessageDialog(null, "Operação cancelada.");
-                    continue;
+                    break;
                 }
 
                 switch (escolha) {
                     case "1":
-                        // Iniciar uma nova sessão
+
                         int sessaoId = iniciarNovaSessao(usuarioId, connection);
 
-                        // Verifica se a sessão foi criada com sucesso
                         if (sessaoId == -1) {
                             JOptionPane.showMessageDialog(null, "Erro ao iniciar nova sessão.");
                             continue;
@@ -52,29 +48,16 @@ public class App {
 
                         var p = new Personagem(10, 0, 0, usuarioId, sessaoId, logger);
                         Random gerador = new Random();
-                        p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
+                        if (!p.nomear()) {
+                            continue;
+                        }
+                        
+                        p.jogar(gerador);
 
                         StringBuilder output = new StringBuilder();
-                        output.append(p.toString()).append("\n\n");
+                        output.append("Resultado do jogo:\n");
+                        output.append(p.getStatus());
 
-                        for (int i = 0; i < 10; i++) {
-                            if (p.energia > 0) {
-                                int oQueFazer = gerador.nextInt(3);
-                                switch (oQueFazer) {
-                                    case 0:
-                                        p.cacar(output);
-                                        break;
-                                    case 1:
-                                        p.comer(output);
-                                        break;
-                                    case 2:
-                                        p.dormir(output);
-                                        break;
-                                }
-                            }
-                        }
-
-                        // Calcular e registrar a pontuação final
                         int pontuacaoFinal = logger.calcularPontuacaoFinal(usuarioId, sessaoId);
                         output.append("\nPontuação final: ").append(pontuacaoFinal).append("\n");
 
@@ -91,6 +74,10 @@ public class App {
                         break;
 
                     case "3":
+                        mostrarRanking(connection);
+                        break;
+
+                    case "4":
                         return;
 
                     default:
@@ -104,7 +91,7 @@ public class App {
     }
 
     private static int iniciarNovaSessao(int usuarioId, Connection connection) {
-        String sql = "INSERT INTO pontuacoes (usuario_id, sessao_id) VALUES (?, ?) RETURNING sessao_id";
+        String sql = "INSERT INTO pontuacoes (usuario_id, sessao_id, data_jogo) VALUES (?, ?, CURRENT_TIMESTAMP) RETURNING sessao_id";
         int sessaoId = gerarSessaoId();
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, usuarioId);
@@ -121,7 +108,26 @@ public class App {
     }
 
     private static int gerarSessaoId() {
-        // Gerar um ID de sessão aleatório ou baseado em lógica específica
         return new Random().nextInt(1000000);
+    }
+
+    private static void mostrarRanking(Connection connection) {
+        String sql = "SELECT u.usuario, p.pontos, p.data_jogo FROM pontuacoes p " +
+                     "JOIN usuarios u ON p.usuario_id = u.id " +
+                     "ORDER BY p.pontos DESC, p.data_jogo ASC";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            StringBuilder rankingOutput = new StringBuilder("Ranking:\n\n");
+            while (rs.next()) {
+                String nome = rs.getString("usuario");
+                int pontos = rs.getInt("pontos");
+                String dataJogo = rs.getString("data_jogo");
+                rankingOutput.append(String.format("%s - Pontuação: %d - Data: %s\n", nome, pontos, dataJogo));
+            }
+            JOptionPane.showMessageDialog(null, rankingOutput.toString());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Erro ao recuperar o ranking: " + e.getMessage());
+        }
     }
 }
