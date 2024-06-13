@@ -4,88 +4,94 @@ import java.util.List;
 
 public class App {
     public static void main(String[] args) {
-        if (!ControleLogin.showLoginDialog()) {
-            return;
-        }
-
-        while (true) {
-            String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
-            String escolha = JOptionPane.showInputDialog(menu);
-
-            if (escolha == null) {
-                JOptionPane.showMessageDialog(null, "Operação cancelada.");
-                continue;
+        try {
+            if (!ControleLogin.showLoginDialog()) {
+                return;
             }
 
-            switch (escolha) {
-                case "1":
-                    var p = new Personagem();
-                    Random gerador = new Random();
-                    p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
-                    LogAtividade logger = new LogAtividade();
+            while (true) {
+                String menu = "1- Jogar\n2- Consultar log completo\n3- Sair";
+                String escolha = JOptionPane.showInputDialog(menu);
 
-                    if (logger.getConnection() == null) {
-                        JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
-                        continue;
-                    }
+                if (escolha == null) {
+                    JOptionPane.showMessageDialog(null, "Operação cancelada.");
+                    continue;
+                }
 
-                    StringBuilder output = new StringBuilder();
-                    output.append(p.toString()).append("\n\n");
+                switch (escolha) {
+                    case "1":
+                        var p = new Personagem();
+                        Random gerador = new Random();
+                        p.nome = JOptionPane.showInputDialog("Nome do personagem: ");
+                        int usuarioId = 1;
+                        LogAtividade logger = new LogAtividade();
 
-                    for (int i = 0; i < 10; i++) {
-                        if (p.energia > 0) {
-                            int oQueFazer = gerador.nextInt(3);
-                            switch (oQueFazer) {
-                                case 0:
-                                    p.cacar();
-                                    logger.logActivity("caçar");
-                                    output.append(p.nome).append(" está caçando...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
-                                case 1:
-                                    p.comer();
-                                    logger.logActivity("comer");
-                                    output.append(p.nome).append(" está comendo...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
-                                case 2:
-                                    p.dormir();
-                                    logger.logActivity("dormir");
-                                    output.append(p.nome).append(" está dormindo...\n");
-                                    output.append(p.toString()).append("\n");
-                                    break;
+                        if (logger.getConnection() == null) {
+                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                            continue;
+                        }
+
+                        StringBuilder output = new StringBuilder();
+                        output.append(p.toString()).append("\n\n");
+
+                        for (int i = 0; i < 10; i++) {
+                            if (p.energia > 0) {
+                                int oQueFazer = gerador.nextInt(3);
+                                switch (oQueFazer) {
+                                    case 0:
+                                        p.cacar();
+                                        logger.logActivity(usuarioId, "caçar");
+                                        output.append(p.nome).append(" caçou\n");
+                                        output.append(p.toString()).append("\n");
+                                        break;
+                                    case 1:
+                                        p.comer();
+                                        logger.logActivity(usuarioId, "comer");
+                                        output.append(p.nome).append(" comeu\n");
+                                        output.append(p.toString()).append("\n");
+                                        break;
+                                    case 2:
+                                        p.dormir();
+                                        logger.logActivity(usuarioId, "dormir");
+                                        output.append(p.nome).append(" dormiu\n");
+                                        output.append(p.toString()).append("\n");
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    JOptionPane.showMessageDialog(null, output.toString());
-                    logger.close();
-                    break;
+                        JOptionPane.showMessageDialog(null, output.toString());
+                        logger.close();
+                        break;
 
-                case "2":
-                    logger = new LogAtividade();
+                    case "2":
+                        logger = new LogAtividade();
 
-                    if (logger.getConnection() == null) {
-                        JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
-                        continue;
-                    }
+                        if (logger.getConnection() == null) {
+                            JOptionPane.showMessageDialog(null, "Erro ao conectar ao banco de dados.");
+                            continue;
+                        }
 
-                    List<String> logs = logger.getLogs();
-                    StringBuilder logOutput = new StringBuilder("Log de Atividades:\n\n");
-                    for (String log : logs) {
-                        logOutput.append(log).append("\n");
-                    }
-                    JOptionPane.showMessageDialog(null, logOutput.toString());
-                    logger.close();
-                    break;
+                        List<String> logs = logger.getLogs();
+                        StringBuilder logOutput = new StringBuilder("Log de Atividades:\n\n");
+                        for (String log : logs) {
+                            logOutput.append(log).append("\n");
+                        }
+                        JOptionPane.showMessageDialog(null, logOutput.toString());
+                        logger.close();
+                        break;
 
-                case "3":
-                    return;
+                    case "3":
+                        return;
 
-                default:
-                    JOptionPane.showMessageDialog(null, "Opção inválida. Tente novamente.");
-                    break;
+                    default:
+                        JOptionPane.showMessageDialog(null, "Opção inválida. Tente novamente.");
+                        break;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Ocorreu um erro: " + e.getMessage());
         }
     }
 }

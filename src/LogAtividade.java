@@ -19,18 +19,18 @@ public class LogAtividade {
         }
     }
 
-
     public Connection getConnection() {
         return connection;
     }
 
-    public void logActivity(String descricao) {
+    public void logActivity(int usuarioId, String descricao) {
         if (connection == null) {
             throw new RuntimeException("Conexão não estabelecida");
         }
-        String sql = "INSERT INTO tb_atividade (descricao, data_de_ocorrencia) VALUES (?, NOW())";
+        String sql = "INSERT INTO tb_atividade (usuario_id, descricao, data_de_ocorrencia) VALUES (?, ?, NOW())";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, descricao);
+            pstmt.setInt(1, usuarioId);
+            pstmt.setString(2, descricao);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -39,11 +39,16 @@ public class LogAtividade {
 
     public List<String> getLogs() {
         List<String> logs = new ArrayList<>();
-        String sql = "SELECT descricao, data_de_ocorrencia FROM tb_atividade ORDER BY data_de_ocorrencia DESC";
+        String sql = "SELECT u.usuario, a.descricao, a.data_de_ocorrencia " +
+                     "FROM tb_atividade a " +
+                     "INNER JOIN usuarios u ON a.usuario_id = u.id " +
+                     "ORDER BY a.data_de_ocorrencia DESC";
         try (PreparedStatement pstmt = connection.prepareStatement(sql);
-                ResultSet rs = pstmt.executeQuery()) {
+             ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                logs.add(rs.getString("data_de_ocorrencia") + " - " + rs.getString("descricao"));
+                logs.add(rs.getString("data_de_ocorrencia") + " - " +
+                         rs.getString("usuario") + " - " +
+                         rs.getString("descricao"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
